@@ -1,92 +1,124 @@
-# Copyright (c) Meta Platforms, Inc. and affiliates.
-# This source code is licensed under the MIT license found in the
+# Copyright (c) 2023-present, FAIR Animated Drawings.
+
+# This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
 
 import argparse
-import base64
-from flask import Flask, render_template, request
-import json
-import os
+import webbrowser
+from pathlib import Path
 import sys
 import yaml
+from flask import Flask, jsonify, request, send_from_directory, send_file
+import json
+import os
 
-global cfg_path
-global char_folder
-app = Flask(__name__, template_folder=os.path.abspath("./fixer_app/"))
+# Create a default skeleton structure.
+# This function replaces the need to load an existing file.
+def create_default_skeleton():
+    """
+    Returns a dictionary containing a default skeleton structure and joints.
+    All joints are initialized at position [0, 0].
+    """
+    return {
+        'skeleton': [
+            {'name': 'hip', 'parent': ''},
+            {'name': 'neck', 'parent': 'hip'},
+            {'name': 'nose', 'parent': 'neck'},
+            {'name': 'l_shoulder', 'parent': 'neck'},
+            {'name': 'l_elbow', 'parent': 'l_shoulder'},
+            {'name': 'l_wrist', 'parent': 'l_elbow'},
+            {'name': 'r_shoulder', 'parent': 'neck'},
+            {'name': 'r_elbow', 'parent': 'r_shoulder'},
+            {'name': 'r_wrist', 'parent': 'r_elbow'},
+            {'name': 'l_hip', 'parent': 'hip'},
+            {'name': 'l_knee', 'parent': 'l_hip'},
+            {'name': 'l_ankle', 'parent': 'l_knee'},
+            {'name': 'r_hip', 'parent': 'hip'},
+            {'name': 'r_knee', 'parent': 'r_hip'},
+            {'name': 'r_ankle', 'parent': 'r_knee'}
+        ],
+        'joints': {
+            'hip': [0, 0], 'neck': [0, 0], 'nose': [0, 0],
+            'l_shoulder': [0, 0], 'l_elbow': [0, 0], 'l_wrist': [0, 0],
+            'r_shoulder': [0, 0], 'r_elbow': [0, 0], 'r_wrist': [0, 0],
+            'l_hip': [0, 0], 'l_knee': [0, 0], 'l_ankle': [0, 0],
+            'r_hip': [0, 0], 'r_knee': [0, 0], 'r_ankle': [0, 0]
+        }
+    }
+
+# The host and port the Flask app will run on
+HOST = '127.0.0.1'
+PORT = 5050
+
+# The directory where the user's character files will be.
+# We will modify this later to handle different users.
+char_anno_dir = ""
 
 
-def load_cfg(path):
-    with open(path, "r") as f:
-        cfg_text = f.read()
-        cfg_yaml = yaml.load(cfg_text, Loader=yaml.Loader)
-    return cfg_yaml
+# Initialize the Flask app
+app = Flask(__name__)
 
 
-def write_cfg(path, cfg):
-    with open(path, "w") as f:
-        yaml.dump(cfg, f)
-
-
-@app.route("/")
+@app.route('/')
 def index():
-    global cfg_path
-    global char_folder
-    cfg = load_cfg(cfg_path)
-
-    base64_img = {"data": ""}
-    with open(os.path.join(char_folder, "texture.png"), "rb") as image_file:
-        base64_img['data'] = str(base64.b64encode(image_file.read()), "utf-8")
-
-    return render_template('dist/index.html', cfg=cfg, image=base64_img)
+    """
+    Serve the main HTML file for the rigging interface.
+    """
+    # We will create the actual HTML file in the next step.
+    # For now, this points to a non-existent file.
+    return send_from_directory('fixer_app', 'index.html')
 
 
-@app.route("/annotations/submit", methods=["POST"])
-def post_cfg():
-    output, message = process(request)
-    if output:
-        print(output)
-    return render_template('submit.html', code=output, message=message)
+@app.route('/annotations', methods=['GET', 'POST'])
+def annotations():
+    """
+    Handles getting and saving the joint annotation data.
+    """
+    if request.method == 'GET':
+        # When the page loads, send it the default skeleton we created
+        skeleton_data = create_default_skeleton()
+        return jsonify(skeleton_data)
+
+    if request.method == 'POST':
+        # When the user hits "Submit", save the new joint data
+        with open(Path(char_anno_dir, 'char_cfg.yaml'), 'w') as f:
+            yaml.dump(request.json, f)
+        print(f'Annotations saved to {char_anno_dir}')
+        return jsonify({'success': True})
 
 
-def process(request):
-    try:
-        formdata = request.form.get('data')
-    except Exception as e:
-        return None, f"Error parsing data from request. No JSON data was found: {e}"
-
-    try:
-        jsondata = json.loads(formdata)
-    except Exception as e:
-        return None, f"Error parsing submission data into JSON. Invalid format?: {e}"
-
-    # convert joint locations from floats to ints
-    for joint in jsondata['skeleton']:
-        joint['loc'][0] = round(joint['loc'][0])
-        joint['loc'][1] = round(joint['loc'][1])
-
-    try:
-        new_cfg = yaml.dump(jsondata)
-    except Exception as e:
-        return None, f"Error converting submission to YAML data. Invalid format?: {e}"
-
-    try:
-        write_cfg(os.path.join(cfg_path), jsondata)
-    except Exception as e:
-        return None, f"Error saving down file to `{cfg_path}: {e}`"
-
-    return new_cfg, f"Successfully saved config to `{cfg_path}`"
+@app.route('/<path:filename>')
+def serve_static(filename):
+    """
+    Serve static files (like the character image) from the annotation directory.
+    """
+    return send_from_directory(char_anno_dir, filename, as_attachment=False)
 
 
-if __name__ == "__main__":
+def main(char_anno_dir_in: str):
+    """
+    Main function to start the Flask web server.
+    """
+    global char_anno_dir
+    char_anno_dir = char_anno_dir_in
+
+    # Basic check to make sure the provided directory exists
+    if not os.path.isdir(char_anno_dir):
+        print(f'Error: Annotation directory not found at {char_anno_dir}')
+        sys.exit(1)
+
+    # Automatically open the user's web browser to the correct page
+    webbrowser.open(f'http://{HOST}:{PORT}')
+
+    # Run the app
+    app.run(host=HOST, port=PORT, debug=True)
+
+
+if __name__ == '__main__':
+    # We will change how this is called later.
+    # For now, it's set up to work similarly to the original script.
     parser = argparse.ArgumentParser()
-    parser.add_argument('char_folder', type=str, help="the location of the character bundle")
-    parser.add_argument('--port', type=int, default=5050, help="the port the tool launches on")
+    parser.add_argument('char_anno_dir', type=str)
     args = parser.parse_args()
 
-    char_folder = args.char_folder
-    cfg_path = os.path.join(char_folder, "char_cfg.yaml")
-
-    if not os.path.isfile(cfg_path):
-        print(f"[Error] File not found. Expected config file at: {cfg_path}")
-        sys.exit(1)
-    app.run(port=args.port, debug=False)
+    main(args.char_anno_dir)
