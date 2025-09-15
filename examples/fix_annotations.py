@@ -5,12 +5,18 @@ import yaml
 from flask import Flask, jsonify, request, send_from_directory, render_template
 import os
 
-# --- Global variable to store the character directory ---
-char_anno_dir = "examples/drawings"
-
 # --- THIS IS THE CRITICAL FIX ---
-# We provide the full path relative to the project root for the UI files.
-app = Flask(__name__, template_folder='examples/fixer_app', static_folder='examples/fixer_app')
+# We now use absolute paths to make sure the server can always find its files,
+# no matter how it's started. This is the production-ready way.
+_main_dir = os.path.dirname(os.path.abspath(__file__))
+_template_folder = os.path.join(_main_dir, 'fixer_app')
+_static_folder = os.path.join(_main_dir, 'fixer_app')
+
+app = Flask(__name__, template_folder=_template_folder, static_folder=_static_folder)
+
+# We will hardcode the character directory for now.
+# This can be changed later to support user uploads.
+char_anno_dir = "examples/drawings"
 
 
 def create_default_skeleton():
@@ -44,6 +50,8 @@ def annotations():
     if request.method == 'GET':
         return jsonify(create_default_skeleton())
     if request.method == 'POST':
+        # NOTE: This saving part won't work yet on the server because it has a temporary file system.
+        # This is okay for now, the UI will just give an error on submit.
         os.makedirs(char_anno_dir, exist_ok=True)
         with open(Path(char_anno_dir, 'char_cfg.yaml'), 'w') as f:
             yaml.dump(request.json, f)
@@ -54,5 +62,3 @@ def annotations():
 def texture():
     """ Serve the character texture.png file. """
     return send_from_directory(char_anno_dir, 'texture.png')
-
-# Gunicorn runs this 'app' object.
