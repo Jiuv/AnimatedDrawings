@@ -6,16 +6,15 @@ from flask import Flask, jsonify, request, send_from_directory, render_template
 import os
 
 # --- THIS IS THE CRITICAL FIX ---
-# We now use absolute paths to make sure the server can always find its files,
-# no matter how it's started. This is the production-ready way.
-_main_dir = os.path.dirname(os.path.abspath(__file__))
-_template_folder = os.path.join(_main_dir, 'fixer_app')
-_static_folder = os.path.join(_main_dir, 'fixer_app')
+# We determine the project's root directory and then build the paths from there.
+# This is the most robust method for any server environment.
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_template_folder = os.path.join(ROOT_DIR, 'examples/fixer_app')
+_static_folder = os.path.join(ROOT_DIR, 'examples/fixer_app')
 
 app = Flask(__name__, template_folder=_template_folder, static_folder=_static_folder)
 
-# We will hardcode the character directory for now.
-# This can be changed later to support user uploads.
+# Hardcode the character directory for now
 char_anno_dir = "examples/drawings"
 
 
@@ -50,15 +49,17 @@ def annotations():
     if request.method == 'GET':
         return jsonify(create_default_skeleton())
     if request.method == 'POST':
-        # NOTE: This saving part won't work yet on the server because it has a temporary file system.
-        # This is okay for now, the UI will just give an error on submit.
-        os.makedirs(char_anno_dir, exist_ok=True)
-        with open(Path(char_anno_dir, 'char_cfg.yaml'), 'w') as f:
+        # This part will still have issues on the server's temp file system,
+        # but the main UI will load.
+        save_path = os.path.join(ROOT_DIR, char_anno_dir)
+        os.makedirs(save_path, exist_ok=True)
+        with open(Path(save_path, 'char_cfg.yaml'), 'w') as f:
             yaml.dump(request.json, f)
-        print(f'Annotations saved to {char_anno_dir}')
+        print(f'Annotations saved to {save_path}')
         return jsonify({'success': True})
 
 @app.route('/texture.png')
 def texture():
     """ Serve the character texture.png file. """
-    return send_from_directory(char_anno_dir, 'texture.png')
+    image_path = os.path.join(ROOT_DIR, char_anno_dir)
+    return send_from_directory(image_path, 'texture.png')
