@@ -15,5 +15,4 @@ EXPOSE 8080
 
 # This is the industry-standard way to run a Flask app with Gunicorn.
 # It tells Gunicorn to run the 'app' object from the 'examples.fix_annotations' module.
-CMD ["gunicorn", "--bind", "0.
-0.0.0:8080", "examples.fix_annotations:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "examples.fix_annotations:app"]
