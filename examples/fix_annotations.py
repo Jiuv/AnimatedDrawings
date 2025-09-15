@@ -2,13 +2,13 @@ import argparse
 from pathlib import Path
 import sys
 import yaml
-from flask import Flask, jsonify, request, send_from_directory, render_template
+from flask import Flask, jsonify, request, send_from_directory
 import os
 
 # --- Define absolute paths inside the container for reliability ---
-_app_dir = os.path.dirname(os.path.abspath(__file__))
-_ui_folder = os.path.join(_app_dir, 'fixer_app')
-_character_folder = os.path.join(_app_dir, 'drawings')
+# WORKDIR in our Dockerfile is /app, so all paths start from there.
+_ui_folder = '/app/examples/fixer_app'
+_character_folder = '/app/examples/drawings'
 
 app = Flask(__name__)
 
@@ -25,7 +25,7 @@ def index():
     return send_from_directory(_ui_folder, 'index.html')
 
 # --- THIS IS THE CRITICAL FIX ---
-# We now have explicit, undeniable routes for our CSS and JS files.
+# We now have explicit, undeniable routes that match the requests in the error log.
 @app.route('/style.css')
 def style():
     return send_from_directory(_ui_folder, 'style.css')
