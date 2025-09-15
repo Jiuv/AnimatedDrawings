@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manual Rigging Tool</title>
-    <link rel="stylesheet" href="style.css">
+    <!-- THIS IS THE CRITICAL FIX: Use url_for to get the correct path -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div id="wrapper">
@@ -18,6 +19,14 @@
             <p id="status-message"></p>
         </div>
     </div>
-    <script src="main.js"></script>
+    <!-- THIS IS THE CRITICAL FIX: Use url_for to get the correct path -->
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
-</html>
+</html>```
+
+#### Step 3: Verify the `Dockerfile`
+
+Please just double-check that your `Dockerfile` still contains this exact `CMD` line at the end. It is correct and does not need to be changed.
+
+```dockerfile
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--chdir", "examples", "fix_annotations:app"]
