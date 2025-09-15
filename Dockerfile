@@ -1,18 +1,18 @@
 # Use an official Python runtime as a parent image
 FROM python:3.9-slim
 
-# Set the working directory in the container
+# Set the working directory in the container to /app
 WORKDIR /app
 
-# Copy the entire project into the container
+# Copy the entire project into the /app directory
 COPY . .
 
-# Install any needed packages specified in requirements.txt
+# Install the Python libraries
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Make port 8080 available to the world outside this container
+# Tell the world that the container listens on port 8080
 EXPOSE 8080
 
-# This is the industry-standard way to run a Flask app with Gunicorn.
+# Run the Gunicorn server. This is the industry-standard command.
 # It tells Gunicorn to run the 'app' object from the 'examples.fix_annotations' module.
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "examples.fix_annotations:app"]

@@ -2,38 +2,27 @@ import argparse
 from pathlib import Path
 import sys
 import yaml
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, render_template
 import os
 
-# --- Define absolute paths inside the container for reliability ---
-# WORKDIR in our Dockerfile is /app, so all paths start from there.
-_ui_folder = '/app/examples/fixer_app'
+# --- THIS IS THE CRITICAL FIX ---
+# Define absolute paths inside the container. WORKDIR in Dockerfile is /app.
+_template_folder = '/app/examples/fixer_app'
+_static_folder = '/app/examples/fixer_app'
 _character_folder = '/app/examples/drawings'
 
-app = Flask(__name__)
+# This is the canonical way to initialize Flask with explicit paths.
+app = Flask(__name__, template_folder=_template_folder, static_folder=_static_folder)
 
 
 def create_default_skeleton():
     # ... (The content of this function is correct and omitted for brevity)
     return { 'skeleton': [ {'name': 'hip', 'parent': ''}, {'name': 'neck', 'parent': 'hip'}, {'name': 'nose', 'parent': 'neck'}, {'name': 'l_shoulder', 'parent': 'neck'}, {'name': 'l_elbow', 'parent': 'l_shoulder'}, {'name': 'l_wrist', 'parent': 'l_elbow'}, {'name': 'r_shoulder', 'parent': 'neck'}, {'name': 'r_elbow', 'parent': 'r_shoulder'}, {'name': 'r_wrist', 'parent': 'r_elbow'}, {'name': 'l_hip', 'parent': 'hip'}, {'name': 'l_knee', 'parent': 'l_hip'}, {'name': 'l_ankle', 'parent': 'l_knee'}, {'name': 'r_hip', 'parent': 'hip'}, {'name': 'r_knee', 'parent': 'r_hip'}, {'name': 'r_ankle', 'parent': 'r_knee'} ], 'joints': { 'hip': [0, 0], 'neck': [0, 0], 'nose': [0, 0], 'l_shoulder': [0, 0], 'l_elbow': [0, 0], 'l_wrist': [0, 0], 'r_shoulder': [0, 0], 'r_elbow': [0, 0], 'r_wrist': [0, 0], 'l_hip': [0, 0], 'l_knee': [0, 0], 'l_ankle': [0, 0], 'r_hip': [0, 0], 'r_knee': [0, 0], 'r_ankle': [0, 0] } }
 
-# --- SERVER ROUTES ---
-
 @app.route('/')
 def index():
-    """ Serve the main HTML file. """
-    return send_from_directory(_ui_folder, 'index.html')
-
-# --- THIS IS THE CRITICAL FIX ---
-# We now have explicit, undeniable routes that match the requests in the error log.
-@app.route('/style.css')
-def style():
-    return send_from_directory(_ui_folder, 'style.css')
-
-@app.route('/main.js')
-def script():
-    return send_from_directory(_ui_folder, 'main.js')
-# --------------------------------
+    """ Serve the main HTML file for the rigging interface. """
+    return render_template('index.html')
 
 @app.route('/annotations', methods=['GET', 'POST'])
 def annotations():

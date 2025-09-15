@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manual Rigging Tool</title>
-    <!-- We will ask for the files at these exact, simple addresses -->
-    <link rel="stylesheet" href="/style.css">
+    <!-- This is the robust way to link to static files in Flask -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div id="wrapper">
@@ -19,7 +19,7 @@
             <p id="status-message"></p>
         </div>
     </div>
-    <!-- We will ask for the files at these exact, simple addresses -->
-    <script src="/main.js"></script>
+    <!-- This is the robust way to link to static files in Flask -->
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
 </html>
