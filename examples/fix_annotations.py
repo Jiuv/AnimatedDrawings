@@ -6,13 +6,14 @@ from flask import Flask, jsonify, request, send_from_directory, render_template
 import os
 
 # --- THIS IS THE CRITICAL FIX ---
-# Since Gunicorn is now running from inside the 'examples' folder,
-# the paths to our UI and character folders are now much simpler.
-_template_folder = 'fixer_app'
-_static_folder = 'fixer_app'
-_character_folder = 'drawings'
+# We use absolute paths based on this file's location to make it foolproof.
+_script_dir = os.path.dirname(os.path.abspath(__file__))
+_template_folder = os.path.join(_script_dir, 'fixer_app')
+_static_folder = os.path.join(_script_dir, 'fixer_app')
+_character_folder = os.path.join(_script_dir, 'drawings')
 
-app = Flask(__name__, template_folder=_template_folder, static_folder=_static_folder)
+# By adding static_url_path='', we tell Flask to serve CSS/JS from the root URL.
+app = Flask(__name__, template_folder=_template_folder, static_folder=_static_folder, static_url_path='')
 
 
 def create_default_skeleton():
@@ -37,7 +38,7 @@ def create_default_skeleton():
 
 @app.route('/')
 def index():
-    """ Serve the main HTML file. """
+    """ Serve the main HTML file for the rigging interface. """
     return render_template('index.html')
 
 @app.route('/annotations', methods=['GET', 'POST'])

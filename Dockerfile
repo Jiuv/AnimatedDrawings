@@ -10,10 +10,10 @@ COPY . .
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Make port 5050 available to the world outside this container
-EXPOSE 5050
+# Make port available to the world outside this container
+EXPOSE 8080
 
-# --- THE FINAL FIX ---
-# Tell Gunicorn to change into the 'examples' directory before starting.
-# Then, tell it to run the 'app' from the 'fix_annotations' file.
-CMD ["gunicorn", "--bind", "0.0.0.0:5050", "--chdir", "examples", "fix_annotations:app"]
+# Use Gunicorn to run the application. This is the production-standard way.
+# It will run the 'app' object from the 'examples/fix_annotations.py' file.
+# Cloud Run automatically provides the $PORT variable.
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "examples.fix_annotations:app"]
