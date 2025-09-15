@@ -13,6 +13,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Make port 8080 available to the world outside this container
 EXPOSE 8080
 
-# Use Gunicorn to run the application on the correct port.
-# Cloud Run provides the $PORT environment variable, which will be 8080.
+# This is the industry-standard way to run a Flask app with Gunicorn.
+# It tells Gunicorn to run the 'app' object from the 'examples.fix_annotations' module.
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "examples.fix_annotations:app"]
