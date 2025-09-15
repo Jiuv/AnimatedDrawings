@@ -6,15 +6,13 @@ from flask import Flask, jsonify, request, send_from_directory, render_template
 import os
 
 # --- THIS IS THE CRITICAL FIX ---
-# We define the root of our project and the paths to our UI and character assets.
-# This absolute pathing is the most robust method.
-ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-UI_FOLDER = os.path.join(ROOT_DIR, 'examples', 'fixer_app')
-CHARACTER_FOLDER = os.path.join(ROOT_DIR, 'examples', 'drawings')
+# Since Gunicorn is now running from inside the 'examples' folder,
+# the paths to our UI and character folders are now much simpler.
+_template_folder = 'fixer_app'
+_static_folder = 'fixer_app'
+_character_folder = 'drawings'
 
-# We now explicitly tell Flask where to find the HTML (template_folder)
-# and the CSS/JS (static_folder).
-app = Flask(__name__, template_folder=UI_FOLDER, static_folder=UI_FOLDER)
+app = Flask(__name__, template_folder=_template_folder, static_folder=_static_folder)
 
 
 def create_default_skeleton():
@@ -37,8 +35,6 @@ def create_default_skeleton():
         }
     }
 
-# --- SERVER ROUTES ---
-
 @app.route('/')
 def index():
     """ Serve the main HTML file. """
@@ -50,17 +46,13 @@ def annotations():
     if request.method == 'GET':
         return jsonify(create_default_skeleton())
     if request.method == 'POST':
-        # This will write the file to a temporary location on the server.
-        # It's okay for now, we will replace this with database logic later.
-        os.makedirs(CHARACTER_FOLDER, exist_ok=True)
-        with open(Path(CHARACTER_FOLDER, 'char_cfg.yaml'), 'w') as f:
+        os.makedirs(_character_folder, exist_ok=True)
+        with open(Path(_character_folder, 'char_cfg.yaml'), 'w') as f:
             yaml.dump(request.json, f)
-        print(f'Annotations saved to {CHARACTER_FOLDER}')
+        print(f'Annotations saved to {_character_folder}')
         return jsonify({'success': True})
 
 @app.route('/texture.png')
 def texture():
     """ Serve the character's texture.png file. """
-    return send_from_directory(CHARACTER_FOLDER, 'texture.png')
-
-# Gunicorn runs this 'app' object to start the server.
+    return send_from_directory(_character_folder, 'texture.png')

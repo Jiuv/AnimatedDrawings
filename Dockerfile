@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Make port 5050 available to the world outside this container
 EXPOSE 5050
 
-# Use Gunicorn to run the application in a production-ready way
-# It will look inside the 'examples/fix_annotations.py' file for a variable named 'app'
-CMD ["gunicorn", "--bind", "0.0.0.0:5050", "--workers", "1", "examples.fix_annotations:app"]
+# --- THE FINAL FIX ---
+# Tell Gunicorn to change into the 'examples' directory before starting.
+# Then, tell it to run the 'app' from the 'fix_annotations' file.
+CMD ["gunicorn", "--bind", "0.0.0.0:5050", "--chdir", "examples", "fix_annotations:app"]
