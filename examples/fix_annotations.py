@@ -6,18 +6,11 @@ from flask import Flask, jsonify, request, send_from_directory, render_template
 import os
 
 # --- Global variable to store the character directory ---
-char_anno_dir = ""
-
-# --- Initialize the Flask App ---
-# We tell Flask where our HTML/JS/CSS files are.
-app = Flask(__name__, template_folder='fixer_app', static_folder='fixer_app')
-
-# Set a global variable for the character directory based on startup arguments
-# This is a workaround to get the command-line argument into the app
-# Gunicorn doesn't pass command-line args in the same way.
-# We will read it from an environment variable set by the Dockerfile's CMD, but for now this is simpler.
-# A better solution would involve setting env vars. For now, this is hardcoded.
 char_anno_dir = "examples/drawings"
+
+# --- THIS IS THE CRITICAL FIX ---
+# We provide the full path relative to the project root for the UI files.
+app = Flask(__name__, template_folder='examples/fixer_app', static_folder='examples/fixer_app')
 
 
 def create_default_skeleton():
@@ -43,7 +36,6 @@ def create_default_skeleton():
 @app.route('/')
 def index():
     """ Serve the main HTML file for the rigging interface. """
-    # Using render_template is the standard way to serve the main page
     return render_template('index.html')
 
 @app.route('/annotations', methods=['GET', 'POST'])
@@ -63,5 +55,4 @@ def texture():
     """ Serve the character texture.png file. """
     return send_from_directory(char_anno_dir, 'texture.png')
 
-# We no longer need the main() function or the app.run() call,
-# because Gunicorn is now our server.
+# Gunicorn runs this 'app' object.
