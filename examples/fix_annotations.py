@@ -6,16 +6,15 @@ from flask import Flask, jsonify, request, send_from_directory, render_template
 import os
 
 # --- THIS IS THE CRITICAL FIX ---
-# We determine the project's root directory and then build the paths from there.
+# We define the root of our project and the paths to our UI and character assets.
+# This absolute pathing is the most robust method.
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_template_folder = os.path.join(ROOT_DIR, 'examples/fixer_app')
-_static_folder = os.path.join(ROOT_DIR, 'examples/fixer_app')
+UI_FOLDER = os.path.join(ROOT_DIR, 'examples', 'fixer_app')
+CHARACTER_FOLDER = os.path.join(ROOT_DIR, 'examples', 'drawings')
 
-# By adding static_url_path='', we tell Flask to serve JS and CSS from the root.
-app = Flask(__name__, template_folder=_template_folder, static_folder=_static_folder, static_url_path='')
-
-# Hardcode the character directory for now
-char_anno_dir = "examples/drawings"
+# We now explicitly tell Flask where to find the HTML (template_folder)
+# and the CSS/JS (static_folder).
+app = Flask(__name__, template_folder=UI_FOLDER, static_folder=UI_FOLDER)
 
 
 def create_default_skeleton():
@@ -38,26 +37,30 @@ def create_default_skeleton():
         }
     }
 
+# --- SERVER ROUTES ---
+
 @app.route('/')
 def index():
-    """ Serve the main HTML file for the rigging interface. """
+    """ Serve the main HTML file. """
     return render_template('index.html')
 
 @app.route('/annotations', methods=['GET', 'POST'])
 def annotations():
-    """ Handles getting and saving the joint annotation data. """
+    """ Handles getting the default skeleton and saving the user's rig. """
     if request.method == 'GET':
         return jsonify(create_default_skeleton())
     if request.method == 'POST':
-        save_path = os.path.join(ROOT_DIR, char_anno_dir)
-        os.makedirs(save_path, exist_ok=True)
-        with open(Path(save_path, 'char_cfg.yaml'), 'w') as f:
+        # This will write the file to a temporary location on the server.
+        # It's okay for now, we will replace this with database logic later.
+        os.makedirs(CHARACTER_FOLDER, exist_ok=True)
+        with open(Path(CHARACTER_FOLDER, 'char_cfg.yaml'), 'w') as f:
             yaml.dump(request.json, f)
-        print(f'Annotations saved to {save_path}')
+        print(f'Annotations saved to {CHARACTER_FOLDER}')
         return jsonify({'success': True})
 
 @app.route('/texture.png')
 def texture():
-    """ Serve the character texture.png file. """
-    image_path = os.path.join(ROOT_DIR, char_anno_dir)
-    return send_from_directory(image_path, 'texture.png')
+    """ Serve the character's texture.png file. """
+    return send_from_directory(CHARACTER_FOLDER, 'texture.png')
+
+# Gunicorn runs this 'app' object to start the server.
