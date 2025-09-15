@@ -1,26 +1,17 @@
-# Copyright (c) 2023-present, FAIR Animated Drawings.
-
-# This source code is licensed under the license found in the
-# LICENSE file in the root directory of this source tree.
-
 import argparse
 from pathlib import Path
 import sys
 import yaml
 from flask import Flask, jsonify, request, send_from_directory
-import json
 import os
 
-# --- THIS IS THE CRITICAL FIX for cloud environments ---
-# It tells the server to be accessible from outside its container.
 HOST = '0.0.0.0'
 PORT = 5050
 
-# --- Global variable to store the character directory ---
 char_anno_dir = ""
 
-# --- Initialize the Flask App ---
-# We tell Flask where to find our static files (JS, CSS)
+# --- THIS IS THE CRITICAL FIX ---
+# We tell Flask that the HTML/JS/CSS files are in a folder called 'fixer_app'
 app = Flask(__name__, static_folder='examples/fixer_app')
 
 
@@ -47,17 +38,14 @@ def create_default_skeleton():
 @app.route('/')
 def index():
     """ Serve the main HTML file for the rigging interface. """
-    # The 'static_folder' setting above automatically handles serving the JS and CSS
     return send_from_directory('examples/fixer_app', 'index.html')
 
 @app.route('/annotations', methods=['GET', 'POST'])
 def annotations():
     """ Handles getting and saving the joint annotation data. """
     if request.method == 'GET':
-        skeleton_data = create_default_skeleton()
-        return jsonify(skeleton_data)
+        return jsonify(create_default_skeleton())
     if request.method == 'POST':
-        # Make sure the directory exists before writing
         os.makedirs(char_anno_dir, exist_ok=True)
         with open(Path(char_anno_dir, 'char_cfg.yaml'), 'w') as f:
             yaml.dump(request.json, f)
@@ -67,7 +55,6 @@ def annotations():
 @app.route('/texture.png')
 def texture():
     """ Serve the character texture.png file. """
-    # This route specifically finds and serves the character image.
     return send_from_directory(char_anno_dir, 'texture.png')
 
 def main(char_anno_dir_in: str):
@@ -76,13 +63,11 @@ def main(char_anno_dir_in: str):
     char_anno_dir = char_anno_dir_in
 
     if not os.path.isdir(char_anno_dir):
-        print(f'Error: Annotation directory not found at {char_anno_dir}')
-        sys.exit(1)
+        # Create a dummy directory if it doesn't exist, to prevent crashing on start
+        os.makedirs(char_anno_dir, exist_ok=True)
+        print(f"Warning: Character directory not found, created a dummy one at {char_anno_dir}")
 
-    print("\n--- SERVER IS RUNNING ---")
-    print(f"--- Open the 'PORTS' tab in the terminal panel below. ---")
-    print(f"--- Find port 5050 and click the 'Open in Browser' icon (a globe). ---")
-    
+    print(f"\n--- SERVER IS RUNNING on http://{HOST}:{PORT} ---")
     app.run(host=HOST, port=PORT, debug=False)
 
 if __name__ == '__main__':
