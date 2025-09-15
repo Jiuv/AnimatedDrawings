@@ -2,17 +2,22 @@ import argparse
 from pathlib import Path
 import sys
 import yaml
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, render_template
 import os
 
-HOST = '0.0.0.0'
-PORT = 5050
-
+# --- Global variable to store the character directory ---
 char_anno_dir = ""
 
-# --- THIS IS THE CRITICAL FIX ---
-# We tell Flask that the HTML/JS/CSS files are in a folder called 'fixer_app'
-app = Flask(__name__, static_folder='examples/fixer_app')
+# --- Initialize the Flask App ---
+# We tell Flask where our HTML/JS/CSS files are.
+app = Flask(__name__, template_folder='fixer_app', static_folder='fixer_app')
+
+# Set a global variable for the character directory based on startup arguments
+# This is a workaround to get the command-line argument into the app
+# Gunicorn doesn't pass command-line args in the same way.
+# We will read it from an environment variable set by the Dockerfile's CMD, but for now this is simpler.
+# A better solution would involve setting env vars. For now, this is hardcoded.
+char_anno_dir = "examples/drawings"
 
 
 def create_default_skeleton():
@@ -38,7 +43,8 @@ def create_default_skeleton():
 @app.route('/')
 def index():
     """ Serve the main HTML file for the rigging interface. """
-    return send_from_directory('examples/fixer_app', 'index.html')
+    # Using render_template is the standard way to serve the main page
+    return render_template('index.html')
 
 @app.route('/annotations', methods=['GET', 'POST'])
 def annotations():
@@ -57,21 +63,5 @@ def texture():
     """ Serve the character texture.png file. """
     return send_from_directory(char_anno_dir, 'texture.png')
 
-def main(char_anno_dir_in: str):
-    """ Main function to start the Flask web server. """
-    global char_anno_dir
-    char_anno_dir = char_anno_dir_in
-
-    if not os.path.isdir(char_anno_dir):
-        # Create a dummy directory if it doesn't exist, to prevent crashing on start
-        os.makedirs(char_anno_dir, exist_ok=True)
-        print(f"Warning: Character directory not found, created a dummy one at {char_anno_dir}")
-
-    print(f"\n--- SERVER IS RUNNING on http://{HOST}:{PORT} ---")
-    app.run(host=HOST, port=PORT, debug=False)
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('char_anno_dir', type=str)
-    args = parser.parse_args()
-    main(args.char_anno_dir)
+# We no longer need the main() function or the app.run() call,
+# because Gunicorn is now our server.
