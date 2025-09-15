@@ -13,6 +13,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Tell the world that the container listens on port 8080
 EXPOSE 8080
 
-# Run the Gunicorn server. This is the industry-standard command.
+# This is the industry-standard way to run a Flask app with Gunicorn.
 # It tells Gunicorn to run the 'app' object from the 'examples.fix_annotations' module.
 CMD ["gunicorn", "--bind", "0.0.0.0:8080", "examples.fix_annotations:app"]

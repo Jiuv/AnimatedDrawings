@@ -8,10 +8,11 @@ import os
 # --- THIS IS THE CRITICAL FIX ---
 # Define absolute paths inside the container. WORKDIR in Dockerfile is /app.
 _template_folder = '/app/examples/fixer_app'
-_static_folder = '/app/examples/fixer_app'
+_static_folder = '/app/examples/fixer_app' # The folder containing CSS and JS
 _character_folder = '/app/examples/drawings'
 
 # This is the canonical way to initialize Flask with explicit paths.
+# We tell it where the HTML is (template_folder) and where the CSS/JS is (static_folder).
 app = Flask(__name__, template_folder=_template_folder, static_folder=_static_folder)
 
 
