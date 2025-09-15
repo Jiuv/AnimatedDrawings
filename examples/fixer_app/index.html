@@ -2,12 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Manual Rigging Tool</title>
+    <!-- This is the robust way to link to static files in Flask.
+         It will correctly generate the '/static/style.css' path -->
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div id="wrapper">
-        <div id="canvas-container"><canvas id="main-canvas"></canvas></div>
+        <div id="canvas-container">
+            <canvas id="main-canvas"></canvas>
+        </div>
         <div id="sidebar">
             <h2>Joints</h2>
             <ul id="joint-list"></ul>
@@ -15,6 +20,8 @@
             <p id="status-message"></p>
         </div>
     </div>
+    <!-- This is the robust way to link to static files in Flask.
+         It will correctly generate the '/static/main.js' path -->
     <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
-</html>
+</html>``
