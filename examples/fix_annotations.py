@@ -7,12 +7,12 @@ import os
 
 # --- THIS IS THE CRITICAL FIX ---
 # We determine the project's root directory and then build the paths from there.
-# This is the most robust method for any server environment.
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _template_folder = os.path.join(ROOT_DIR, 'examples/fixer_app')
 _static_folder = os.path.join(ROOT_DIR, 'examples/fixer_app')
 
-app = Flask(__name__, template_folder=_template_folder, static_folder=_static_folder)
+# By adding static_url_path='', we tell Flask to serve JS and CSS from the root.
+app = Flask(__name__, template_folder=_template_folder, static_folder=_static_folder, static_url_path='')
 
 # Hardcode the character directory for now
 char_anno_dir = "examples/drawings"
@@ -49,8 +49,6 @@ def annotations():
     if request.method == 'GET':
         return jsonify(create_default_skeleton())
     if request.method == 'POST':
-        # This part will still have issues on the server's temp file system,
-        # but the main UI will load.
         save_path = os.path.join(ROOT_DIR, char_anno_dir)
         os.makedirs(save_path, exist_ok=True)
         with open(Path(save_path, 'char_cfg.yaml'), 'w') as f:
